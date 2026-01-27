@@ -1,0 +1,245 @@
+# ⬛⬜🛣️ BlackRoad OS - Cloudflare Workers Configuration
+# Agent Jobs, Auto-Updates & Self-Resolution System
+
+name = "blackroad-workers"
+main = "src/index.ts"
+compatibility_date = "2024-06-14"
+compatibility_flags = ["nodejs_compat"]
+
+# ============================================================================
+# WORKER SETTINGS
+# ============================================================================
+
+# Account configuration (set via secrets or env)
+# account_id = "" # Set in CI/CD secrets
+
+# Custom domain routing
+# routes = [
+#   { pattern = "workers.blackroad.io/*", zone_name = "blackroad.io" }
+# ]
+
+# Workers.dev subdomain
+workers_dev = true
+
+# ============================================================================
+# KV NAMESPACES - Persistent Key-Value Storage
+# ============================================================================
+
+# Job state and configuration storage
+[[kv_namespaces]]
+binding = "JOBS_KV"
+id = "blackroad-jobs-kv"
+preview_id = "blackroad-jobs-kv-preview"
+
+# Repo sync cache and metadata
+[[kv_namespaces]]
+binding = "REPOS_KV"
+id = "blackroad-repos-kv"
+preview_id = "blackroad-repos-kv-preview"
+
+# Self-healing state and incident tracking
+[[kv_namespaces]]
+binding = "HEALING_KV"
+id = "blackroad-healing-kv"
+preview_id = "blackroad-healing-kv-preview"
+
+# Agent memory and context
+[[kv_namespaces]]
+binding = "AGENT_MEMORY_KV"
+id = "blackroad-agent-memory-kv"
+preview_id = "blackroad-agent-memory-kv-preview"
+
+# ============================================================================
+# DURABLE OBJECTS - Stateful Agents
+# ============================================================================
+
+[[durable_objects.bindings]]
+name = "AGENT_COORDINATOR"
+class_name = "AgentCoordinator"
+
+[[durable_objects.bindings]]
+name = "REPO_SYNC_AGENT"
+class_name = "RepoSyncAgent"
+
+[[durable_objects.bindings]]
+name = "SELF_HEALER"
+class_name = "SelfHealer"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["AgentCoordinator", "RepoSyncAgent", "SelfHealer"]
+
+# ============================================================================
+# QUEUES - Async Job Processing
+# ============================================================================
+
+[[queues.producers]]
+binding = "JOB_QUEUE"
+queue = "blackroad-job-queue"
+
+[[queues.consumers]]
+queue = "blackroad-job-queue"
+max_batch_size = 10
+max_batch_timeout = 30
+max_retries = 3
+dead_letter_queue = "blackroad-dlq"
+
+[[queues.producers]]
+binding = "SYNC_QUEUE"
+queue = "blackroad-sync-queue"
+
+[[queues.consumers]]
+queue = "blackroad-sync-queue"
+max_batch_size = 5
+max_batch_timeout = 60
+max_retries = 5
+dead_letter_queue = "blackroad-dlq"
+
+[[queues.producers]]
+binding = "HEALING_QUEUE"
+queue = "blackroad-healing-queue"
+
+[[queues.consumers]]
+queue = "blackroad-healing-queue"
+max_batch_size = 3
+max_batch_timeout = 10
+max_retries = 10
+dead_letter_queue = "blackroad-dlq"
+
+# Dead Letter Queue for failed jobs
+[[queues.consumers]]
+queue = "blackroad-dlq"
+max_batch_size = 1
+max_batch_timeout = 300
+max_retries = 0
+
+# ============================================================================
+# CRON TRIGGERS - Scheduled Jobs
+# ============================================================================
+
+[triggers]
+crons = [
+  # Every 5 minutes: Health check and auto-healing
+  "*/5 * * * *",
+  # Every 15 minutes: Repo sync check
+  "*/15 * * * *",
+  # Every hour: Full cohesion analysis
+  "0 * * * *",
+  # Daily at midnight UTC: Deep sync and cleanup
+  "0 0 * * *",
+  # Weekly on Sunday: Full system audit
+  "0 0 * * 0"
+]
+
+# ============================================================================
+# R2 STORAGE - Large Object Storage
+# ============================================================================
+
+[[r2_buckets]]
+binding = "ARTIFACTS_BUCKET"
+bucket_name = "blackroad-artifacts"
+preview_bucket_name = "blackroad-artifacts-preview"
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+[vars]
+ENVIRONMENT = "development"
+LOG_LEVEL = "debug"
+BLACKROAD_ORG = "BlackRoad-OS"
+ENABLE_SELF_HEALING = "true"
+ENABLE_AUTO_UPDATES = "true"
+COHESION_THRESHOLD = "0.85"
+
+# Repos to monitor and sync
+MONITORED_REPOS = "blackroad-prism-console,training-blackroad-io,blackroad-core,blackroad-api"
+
+# ============================================================================
+# STAGING ENVIRONMENT
+# ============================================================================
+
+[env.staging]
+name = "blackroad-workers-staging"
+workers_dev = true
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+LOG_LEVEL = "info"
+ENABLE_SELF_HEALING = "true"
+ENABLE_AUTO_UPDATES = "true"
+
+[[env.staging.kv_namespaces]]
+binding = "JOBS_KV"
+id = "blackroad-jobs-kv-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "REPOS_KV"
+id = "blackroad-repos-kv-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "HEALING_KV"
+id = "blackroad-healing-kv-staging"
+
+[[env.staging.kv_namespaces]]
+binding = "AGENT_MEMORY_KV"
+id = "blackroad-agent-memory-kv-staging"
+
+# ============================================================================
+# PRODUCTION ENVIRONMENT
+# ============================================================================
+
+[env.production]
+name = "blackroad-workers-production"
+workers_dev = false
+
+# Production routes
+# routes = [
+#   { pattern = "workers.blackroad.io/*", zone_name = "blackroad.io" },
+#   { pattern = "api.blackroad.io/workers/*", zone_name = "blackroad.io" }
+# ]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+LOG_LEVEL = "warn"
+ENABLE_SELF_HEALING = "true"
+ENABLE_AUTO_UPDATES = "true"
+COHESION_THRESHOLD = "0.90"
+
+[[env.production.kv_namespaces]]
+binding = "JOBS_KV"
+id = "blackroad-jobs-kv-production"
+
+[[env.production.kv_namespaces]]
+binding = "REPOS_KV"
+id = "blackroad-repos-kv-production"
+
+[[env.production.kv_namespaces]]
+binding = "HEALING_KV"
+id = "blackroad-healing-kv-production"
+
+[[env.production.kv_namespaces]]
+binding = "AGENT_MEMORY_KV"
+id = "blackroad-agent-memory-kv-production"
+
+# ============================================================================
+# ANALYTICS & OBSERVABILITY
+# ============================================================================
+
+[observability]
+enabled = true
+
+# Tail workers for log aggregation
+# [[tail_consumers]]
+# service = "blackroad-log-aggregator"
+
+# ============================================================================
+# SECRETS (set via wrangler secret put)
+# ============================================================================
+# Required secrets:
+# - GITHUB_TOKEN: For repo access and webhooks
+# - GITHUB_APP_ID: For GitHub App authentication
+# - GITHUB_APP_PRIVATE_KEY: For GitHub App signing
+# - ANTHROPIC_API_KEY: For AI agent capabilities
+# - WEBHOOK_SECRET: For validating incoming webhooks
+# - ALERT_WEBHOOK_URL: For sending alerts (Slack/Discord)
