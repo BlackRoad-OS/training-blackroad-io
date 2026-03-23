@@ -1,29 +1,20 @@
 # training-blackroad-io
 
-Part of the [BlackRoad OS](https://blackroad.io) ecosystem.
+🖤 Training & certification at training.blackroad.io
 
-## Overview
+## Organization
 
-training-blackroad-io is a component of BlackRoad OS, Inc.
+**BlackRoad-OS** — Core platform — websites, integrations, coordination
 
-## Installation
+## BlackRoad OS
 
-See documentation for installation and usage instructions.
+BlackRoad OS is a distributed AI operating system — 20 domains, 668 repositories, 1,000 AI agents, and sovereign infrastructure running on Raspberry Pis and Hailo-8 accelerators. No cloud dependency.
 
-## Documentation
+- [blackroad.io](https://blackroad.io) — Main platform
+- [docs.blackroad.io](https://docs.blackroad.io) — Documentation
+- [GitHub](https://github.com/BlackRoad-OS) — This organization
 
-Full documentation available at [docs.blackroad.io](https://docs.blackroad.io)
+**Language:** HTML
 
-## License
 
-Copyright © 2025 BlackRoad OS, Inc.
-
-## Links
-
-- [BlackRoad OS](https://blackroad.io)
-- [Documentation](https://docs.blackroad.io)
-- [GitHub](https://github.com/BlackRoad-OS)
-
----
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+*© 2024-2026 BlackRoad OS, Inc. All Rights Reserved.*
